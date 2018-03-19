@@ -1,0 +1,58 @@
+#!/usr/local/bin/ruby
+
+Signal.trap("INT") { exit 2 }
+Signal.trap("TERM") {  exit 15}
+
+if ARGV.length == 1
+  tape_number = ARGV[0]
+  dir = "/home/moa/tape/#{tape_number}"
+  
+  #Make the directory
+  `/bin/mkdir -p #{dir}`
+  if $? != 0
+    $stderr.puts "Error from: /bin/mkdir -p '#{dir}' exit code #{$?}"
+    puts "Error from: /bin/mkdir -p '#{dir}' exit code #{$?}"
+    exit $?
+  end
+  
+  puts Time.now
+  puts '***************** Reading Tape'
+  `/home/moa/bin/read-tape #{dir} > #{dir + '.stdout'}`
+  puts Time.now
+  puts
+  if $? != 0
+    $stderr.puts "read-tape Failed with exit code #{$?}"
+    puts "read-tape Failed with exit code #{$?}"
+    exit $?
+  end
+  puts '***************** Completed Reading Tape (you can start another while the uploading to the object store completes)'
+  
+  puts '***************** Uncompressing files from tape'
+  `/home/moa/bin/unpack-dir #{dir} >> #{dir + '.stdout'}`
+  puts Time.now
+  puts
+  if $? != 0
+    $stderr.puts "unpack-dir Failed with exit code #{$?}"
+    puts "unpack-dir Failed with exit code #{$?}"
+    exit $?
+  end
+    
+  puts '***************** Uploading to object store'
+  `/home/moa/bin/upload-dir #{dir} >> #{dir + '.stdout'}`
+  puts Time.now
+  puts
+  if $? != 0
+    $stderr.puts "upload-dir Failed with exit code #{$?}"
+    puts "upload-dir Failed with exit code #{$?}"
+    exit $?
+  end
+  print "Files uploaded: "
+  `/usr/bin/wc -l #{dir}.log`
+ 
+  puts "****************** Complete. If you had no errors, you can delete the directory with rm -rf #{dir}"
+  puts "****************** Upload Log in #{dir.gsub(/\/$/, '')}.log (Json Fits metadata, line per file)"
+  puts "****************** Stdout Log in #{dir.gsub(/\/$/, '')}.stdout"
+else
+  $stderr.puts "Usage: uploadtape <tape-number>"
+end
+

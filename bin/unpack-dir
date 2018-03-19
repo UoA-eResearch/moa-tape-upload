@@ -1,0 +1,12 @@
+#!/bin/sh
+if [ "$#" -ne 1 ]; then
+    echo "Usage: unpack <directory>"
+    exit 1
+fi
+echo "**************** Uncompressing/gunzip all .Z and .gz files ready for uploading to object store"
+/usr/bin/find $1 -type f -name \*.Z -exec uncompress {} \;
+#/usr/bin/find $1 -type f -name \*.gz -exec gunzip {} \;
+echo "**************** Completed unpacking"
+/usr/bin/du -sh $1
+echo -n "Fits files: "
+/usr/bin/find $1 -name \*.fit | /usr/bin/wc -l
