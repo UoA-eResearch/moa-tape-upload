@@ -49,7 +49,7 @@ class AWS_connection
     rescue Aws::S3::Errors::NotFound => error
       return nil
     rescue   StandardError => error
-      $stderr.puts "obj_md5(#{bucket}) : #{error.class} #{error.message}"
+      $stderr.puts "obj_md5(#{bucket}) : #{error.class} #{error}"
     end
   end
   
@@ -129,6 +129,89 @@ class AWS_connection
     rescue StandardError => error
         $stderr.puts "AWS_connection(#{@bucket}).object_put_mem(#{key}): #{error}"
     end 
+  end
+  
+  #ls of the object store
+  # @param prefix [String] optional prefix to limit the results (see S3 SDK)
+  # @param delimiter [String] optional delimiter character to limit the results (see S3 SDK)
+  # @yield object [Aws::S3::Types::Object] if block is given, otherwise puts object attributes to stdout. 
+  def bucket_ls(prefix: nil, delimiter: nil)
+    begin
+      size = 0
+      count = 0
+      next_marker = nil
+      objects = nil
+      begin
+        objects = @s3_client.list_objects(bucket: @bucket, prefix: prefix, delimiter: delimiter, :marker => next_marker)
+        break if objects == nil
+        if block_given?
+          objects.contents.each do |object|
+            yield object
+          end
+        else
+          objects.contents.each do |object|
+                  puts "#{object.key}\t#{object.last_modified}\t#{object.owner.id}\t#{object.owner.display_name}\t#{object.size}"
+                  size += object.size
+                  count += 1
+          end
+        end
+        next_marker = objects.next_marker
+      end until objects.is_truncated == false
+      unless block_given?
+        puts "bucket_ls: Total #{count} Files #{size/(1024.0 * 1024.0 * 1024.0)}GiB" 
+      end
+    rescue StandardError => error
+        puts "bucket_ls(#{@bucket}) : #{error}"
+    end 
+  end
+  
+  #Copy an object from one bucket to another (or the same bucket, with a different key)
+  # @param src_bucket [String] If null, then the current bucket is used
+  # @param src_key [String] The object to copy
+  # @param dest_bucket [String] bucket to copy source object to.
+  # @param dest_key [String] The destination objects key (name)
+  def object_copy(src_bucket: nil, src_key:, dest_bucket:, dest_key:)
+    begin
+      src_bucket ||= @bucket
+      @s3_client.copy_object( copy_source: "/#{src_bucket}/#{src_key}", bucket: dest_bucket, key: dest_key, metadata_directive: "COPY")
+    rescue  StandardError => error
+      puts "object_copy(#{src_bucket},#{src_key},#{dest_bucket},#{dest_key}) : #{error}"
+    end
+  end
+  
+  #Copy one bucket to another, skipping content already in the destination bucket.
+  # @param src_bucket [String] If null, then the current bucket is used
+  # @param dest_bucket [String] bucket to rsync source bucket objects to.
+  def rsync(src_bucket: nil, dest_bucket:)
+    src_bucket ||= @bucket
+    dest_dir_list = {}
+    bucket_ls(bucket: dest_bucket) { |o| dest_dir_list[o.key] = o.etag }
+    count = size = 0
+    bucket_ls(bucket: src_bucket) do |object|
+      if dest_dir_list[object.key] == nil || dest_dir_list[object.key] != object.etag
+        print "#{object.key}\r"
+        object_copy(src_bucket: src_bucket, src_key: object.key, dest_bucket: dest_bucket, dest_key: object.key)
+        size += object.size
+        count += 1
+      end
+    end
+    puts "\nCopied: #{count} files, Total #{size/(1024.0 * 1024.0 * 1024.0)}GiB"
+  end
+
+  #Get the object count and total size (in Bytes) of the objects in the bucket
+  # @param prefix [String] optional prefix to limit the results (see S3 SDK)
+  # @param delimiter [String] optional delimiter character to limit the results (see S3 SDK)
+  def bucket_stats(prefix: nil, delimiter: nil)
+    begin
+      size = count = 0.0
+      bucket_ls(prefix: prefix, delimiter: delimiter) do |object|
+        size += object.size
+        count += 1
+      end
+    rescue StandardError => error
+        puts "bucket_size(#{@bucket}) : #{error}"
+    end 
+    return count, size
   end
   
 end
