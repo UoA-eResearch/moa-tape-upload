@@ -1,0 +1,14 @@
+#!/usr/local/bin/ruby
+require_relative '../rlib/aws_connection.rb'
+
+Signal.trap("INT") { exit 2 }
+Signal.trap("TERM") {  exit 15}
+
+aws = AWS_connection.new(config_file: "#{File.expand_path(File.dirname(__FILE__))}/../conf/conf_internal.json")   #We are inside the Uni network
+
+if ARGV.length == 1
+  aws.bucket_ls(prefix: ARGV[0])
+else
+  aws.bucket_ls
+end
+
