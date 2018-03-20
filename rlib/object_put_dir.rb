@@ -72,13 +72,13 @@ def object_put_dir(aws_fd:, directory:, strip_base_dir: nil, misc_prefix: 'misc'
                 rescue S3_Exists => e #Get this if the file existed in the object store with the same MD5 sum.
                   #puts e
                 rescue StandardError => error
-                  $stderr.puts "Copy of \"#{qualified_filename}\" to object store failed: #{error.message}"
+                  $stderr.puts "Copy of \"#{qualified_filename}\" to object store failed: #{error}"
                 end
               end
             end
           end
         rescue StandardError => error
-          $stderr.puts "Stat of #{qualified_filename} failed with error: #{error.message}"
+          $stderr.puts "Stat of #{qualified_filename} failed with error: #{error}"
         end
       end
     end

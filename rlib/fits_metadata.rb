@@ -36,9 +36,10 @@ class Fits_metadata
         else
           @info_filename = nil
           @list_head_failed = true
+          $stderr.puts "Fits file #{@qualified_filename} may be corrupt. listhead exit code #{$?}"
         end
       rescue StandardError => e
-        puts "Fits_metadata.init(directory: #{directory}, filename: #{filename}): #{e.message}"
+        puts "Fits_metadata.init(directory: #{directory}, filename: #{filename}): #{e}"
       end
     else
       raise "Fits_metadata.init(directory: #{directory}, filename: #{filename}): Not a fits or info file #{filename}"
