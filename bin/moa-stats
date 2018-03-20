@@ -1,0 +1,15 @@
+#!/usr/local/bin/ruby
+require_relative '../rlib/aws_connection.rb'
+
+Signal.trap("INT") { exit 2 }
+Signal.trap("TERM") {  exit 15}
+
+aws = AWS_connection.new(config_file: "#{File.expand_path(File.dirname(__FILE__))}/../conf/conf_internal.json")   #We are inside the Uni network
+
+if ARGV.length == 1
+  count, size = aws.bucket_stats(prefix: ARGV[0])
+else
+  count, size = aws.bucket_stats
+end
+
+puts "#{aws.bucket} #{count} files, #{size/(1024.0 * 1024.0 * 1024.0)}GiBytes"
