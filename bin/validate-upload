@@ -72,8 +72,9 @@ parse_options
 
 if ARGV.length == 1
   aws = AWS_connection.new(config_file: "#{File.expand_path(File.dirname(__FILE__))}/../conf/conf_internal.json")   #We are inside the Uni network
+  puts "**************** Validate-upload(delete: #{@options[:delete]})"
   count = validate_directory(aws_fd: aws, directory: ARGV[0], delete: @options[:delete], verbose: @options[:verbose])
-  puts "Processed #{count} files"
+  puts "**************** Validate-upload(delete: #{@options[:delete]}) Processed #{count} files"
 else
   $stderr.puts @optparse.help
   exit 1
