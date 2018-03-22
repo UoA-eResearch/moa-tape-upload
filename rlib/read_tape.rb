@@ -5,6 +5,9 @@ def read_tape(into_directory:)
   $stderr.puts " ********************* Reading tape into #{into_directory} *********************"
   tar_count = 0
   counter = 0
+  #got some tapes that work better for this
+    system ( "/bin/mt -f /dev/nst0 fsf" ) 
+    system ( "/bin/mt -f /dev/nst0 rewind" ) 
   begin
     puts "Tape file index: #{tar_count}" #Put into the stdout log, so it bounds the file list.
     $stderr.puts "Tape file index: #{tar_count}" #Also put to stderr so we can see which file image is the problem.
