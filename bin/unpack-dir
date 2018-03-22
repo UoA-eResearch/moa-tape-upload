@@ -7,6 +7,7 @@ echo "**************** Uncompressing/gunzip all .Z and .gz files ready for uploa
 /usr/bin/find $1 -type f -name \*.Z -exec uncompress {} \;
 #/usr/bin/find $1 -type f -name \*.gz -exec gunzip {} \;
 echo "**************** Completed unpacking"
+echo -n "Directory size: "
 /usr/bin/du -sh $1
 echo -n "Fits files: "
 /usr/bin/find $1 -name \*.fit | /usr/bin/wc -l
