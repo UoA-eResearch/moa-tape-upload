@@ -11,7 +11,7 @@ if ARGV.length == 1
   `/bin/mkdir -p #{dir}`
   if $? != 0
     $stderr.puts "Error from: /bin/mkdir -p '#{dir}' exit code #{$?}"
-    puts "Error from: /bin/mkdir -p '#{dir}' exit code #{$?}"
+    `/bin/echo "Error from: /bin/mkdir -p '#{dir}' exit code #{$?}"  >> #{dir + '.stdout'}`
     exit $?
   end
   
@@ -22,7 +22,7 @@ if ARGV.length == 1
   puts
   if $? != 0
     $stderr.puts "read-tape Failed with exit code #{$?}"
-    puts "read-tape Failed with exit code #{$?}"
+    `/bin/echo "Error from: read-tape '#{dir}' exit code #{$?}"  >> #{dir + '.stdout'}`
     exit $?
   end
   puts '***************** Completed Reading Tape (you can start another while the uploading to the object store completes)'
@@ -33,7 +33,7 @@ if ARGV.length == 1
   puts
   if $? != 0
     $stderr.puts "unpack-dir Failed with exit code #{$?}"
-    puts "unpack-dir Failed with exit code #{$?}"
+    `/bin/echo "Error from: unpack-dir '#{dir}' exit code #{$?}"  >> #{dir + '.stdout'}`
     exit $?
   end
     
@@ -43,7 +43,7 @@ if ARGV.length == 1
   puts
   if $? != 0
     $stderr.puts "upload-dir Failed with exit code #{$?}"
-    puts "upload-dir Failed with exit code #{$?}"
+    `/bin/echo "Error from: upload-dir '#{dir}' exit code #{$?}"  >> #{dir + '.stdout'}`
     exit $?
   end
   print "Files uploaded: "
@@ -55,7 +55,7 @@ if ARGV.length == 1
   puts
   if $? != 0
     $stderr.puts "validate-upload Failed with exit code #{$?}"
-    puts "validate-upload Failed with exit code #{$?}"
+    `/bin/echo "Error from: validate-upload '#{dir}' exit code #{$?}"  >> #{dir + '.stdout'}`
     exit $?
   end
 
