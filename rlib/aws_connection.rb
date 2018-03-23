@@ -130,7 +130,25 @@ class AWS_connection
         $stderr.puts "AWS_connection(#{@bucket}).object_put_mem(#{key}): #{error}"
     end 
   end
-  
+
+  #get object into memory
+  def object_get_mem(key:)
+    begin
+      resp = @s3_client.get_object(bucket: @bucket, key: key)
+      return resp.body.string
+    rescue  Exception => error
+      puts "object_get_mem(#{@bucket}, #{key}) : #{error}"
+    end
+  end
+
+  #get object into file
+  def object_get_file(key:, filename:, range: nil)
+    begin
+      resp = @s3_client.get_object( response_target: filename, bucket: @bucket, key: key, range: nil)
+    rescue  Exception => error
+      puts "object_get_file(#{@bucket},#{key},#{filename},#{range}) : #{error}"
+    end
+  end  
   #ls of the object store
   # @param prefix [String] optional prefix to limit the results (see S3 SDK)
   # @param delimiter [String] optional delimiter character to limit the results (see S3 SDK)

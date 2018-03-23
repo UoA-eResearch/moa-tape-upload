@@ -1,0 +1,16 @@
+#!/usr/local/bin/ruby
+require_relative '../rlib/aws_connection.rb'
+
+Signal.trap("INT") { exit 2 }
+Signal.trap("TERM") {  exit 15}
+
+aws = AWS_connection.new(config_file: "#{File.expand_path(File.dirname(__FILE__))}/../conf/conf_internal.json")   #We are inside the Uni network
+
+if ARGV.length == 1
+  aws.object_get_mem(key: ARGV[0]).each_line do |l|
+    puts l
+  end
+else
+  puts "Usage: moa-cat <object-name>"
+end
+
