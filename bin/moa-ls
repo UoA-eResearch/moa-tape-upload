@@ -7,8 +7,12 @@ Signal.trap("TERM") {  exit 15}
 aws = AWS_connection.new(config_file: "#{File.expand_path(File.dirname(__FILE__))}/../conf/conf_internal.json")   #We are inside the Uni network
 
 if ARGV.length == 1
-  aws.bucket_ls(prefix: ARGV[0])
+  aws.bucket_ls(prefix: ARGV[0].gsub(/^\//,'') , delimiter: ARGV[0][-1] == '/' ? '/' : nil ) do |o|
+    puts "#{o.key} #{o.size}"
+  end
 else
-  aws.bucket_ls
+  aws.bucket_ls do |o|
+    puts "#{o.key} #{o.size}"
+  end
 end
 

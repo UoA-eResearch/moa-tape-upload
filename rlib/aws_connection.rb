@@ -145,10 +145,13 @@ class AWS_connection
         objects = @s3_client.list_objects(bucket: @bucket, prefix: prefix, delimiter: delimiter, :marker => next_marker)
         break if objects == nil
         if block_given?
-          objects.contents.each do |object|
-            yield object
+          objects.common_prefixes.each do |prefix|
+            yield OpenStruct.new(bucket: bucket, key: prefix.prefix, last_modified: Time.now, 
+                                  owner: OpenStruct.new(display_name: "", id: ""), size: 0, storage_class: '')
           end
+          objects.contents.each  { |object| yield object }
         else
+          objects.common_prefixes.each { |prefix| puts prefix.prefix }
           objects.contents.each do |object|
                   puts "#{object.key}\t#{object.last_modified}\t#{object.owner.id}\t#{object.owner.display_name}\t#{object.size}"
                   size += object.size
