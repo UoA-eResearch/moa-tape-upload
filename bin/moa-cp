@@ -1,6 +1,23 @@
 #!/usr/local/bin/ruby
 require_relative '../rlib/aws_connection.rb'
 
+require 'optparse'
+#parse command line arguments
+# Sets @options based on command line args
+def parse_options
+  @options = {}
+  @optparse = OptionParser.new do|opts|
+    opts.banner = "Usage: moa-cp <object-name> <filename>\n\n     Copy object contents to a file\n\n"
+    opts.on( '-?', '--help', 'Display usage' ) do
+      puts opts
+      exit 0
+    end
+  end
+  @optparse.parse!
+end
+
+parse_options
+
 Signal.trap("INT") { exit 2 }
 Signal.trap("TERM") {  exit 15}
 
@@ -9,6 +26,6 @@ aws = AWS_connection.new(config_file: "#{File.expand_path(File.dirname(__FILE__)
 if ARGV.length == 2
   aws.object_get_file(key: ARGV[0], filename: ARGV[1])
 else
-  puts "Usage: moa-cp <object-name> <filename>"
+  $stderr.puts @optparse.help
 end
 
