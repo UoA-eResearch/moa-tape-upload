@@ -1,6 +1,23 @@
 #!/usr/local/bin/ruby
 require_relative '../rlib/aws_connection.rb'
 
+require 'optparse'
+#parse command line arguments
+# Sets @options based on command line args
+def parse_options
+  @options = {}
+  @optparse = OptionParser.new do|opts|
+    opts.banner = "Usage: moa-cat [options] <object-name>\n\n     Print object contents to stdout\n\n"
+    opts.on( '-?', '--help', 'Display usage' ) do
+      puts opts
+      exit 0
+    end
+  end
+  @optparse.parse!
+end
+
+parse_options
+
 Signal.trap("INT") { exit 2 }
 Signal.trap("TERM") {  exit 15}
 
@@ -11,6 +28,6 @@ if ARGV.length == 1
     puts l
   end
 else
-  puts "Usage: moa-cat <object-name>"
+  $stderr.puts @optparse.help
 end
 
