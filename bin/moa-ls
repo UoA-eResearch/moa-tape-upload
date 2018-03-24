@@ -24,12 +24,12 @@ def parse_options
     @options[:directories] = true
     @options[:objects] = true
  
-    opts.on( '-d', 'List Only Directories' ) do
+    opts.on( '-d', '--directories', 'List Only Directories' ) do
       @options[:directories] = true
       @options[:objects] = false
     end
     
-    opts.on( '-o', 'List Only objects' ) do
+    opts.on( '-o', '--objects', 'List Only objects' ) do
       @options[:objects] = true
       @options[:directories] = false
     end
@@ -42,6 +42,11 @@ def parse_options
     @options[:recursive] = false
     opts.on( '-R',  'Recursively list subdirectories encountered' ) do
       @options[:recursive] = true
+    end
+
+    @options[:md5] = false
+    opts.on( '-m', '--md5', 'Output MD5 checksum' ) do
+      @options[:md5] = true
     end
 
     @options[:versions] = false
@@ -82,6 +87,7 @@ def list(prefix:)
     else
       print "#{o.key}"
     end
+    print @options[:md5] ? "\t#{ o.etag.gsub(/"/, '') }" : ""
     puts @options[:versions] ? "\t#{o.is_latest ? "" : "version: #{o.version_id}"}" : ""
     count += 1
     size += o.size
