@@ -1,6 +1,16 @@
 #!/usr/local/bin/ruby
 require_relative '../rlib/aws_connection.rb'
 
+def human_size(n)
+  if n < 1024; "%6dB" % n
+  elsif n < 1048576; "%4.1fKiB" % (n/1024.0)
+  elsif n < 1073741824; "%4.1dMiB" % (n/1048576.0)
+  elsif n < 1099511627776; "%4.1fGiB" % (n/1073741824.0)
+  elsif n < 1125899906842624; "%4.1fTiB" % (n/1099511627776.0)
+  else "%4.1fPiB" % (n/1125899906842624.0)
+  end
+end
+
 Signal.trap("INT") { exit 2 }
 Signal.trap("TERM") {  exit 15}
 
@@ -12,4 +22,4 @@ else
   count, size = aws.bucket_stats
 end
 
-puts "#{aws.bucket} #{count} files, #{size/(1024.0 * 1024.0 * 1024.0)}GiBytes"
+puts "#{aws.bucket} #{count} files, #{human_size(size))}"
