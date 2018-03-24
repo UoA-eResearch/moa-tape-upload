@@ -142,6 +142,8 @@ class AWS_connection
   end
 
   #get object into file
+  # @param key [String] Object store key (filename)
+  # @param filename [String] Local file system filename
   def object_get_file(key:, filename:, range: nil)
     begin
       resp = @s3_client.get_object( response_target: filename, bucket: @bucket, key: key, range: nil)
@@ -149,34 +151,52 @@ class AWS_connection
       puts "object_get_file(#{@bucket},#{key},#{filename},#{range}) : #{error}"
     end
   end  
+  
   #ls of the object store
   # @param prefix [String] optional prefix to limit the results (see S3 SDK)
   # @param delimiter [String] optional delimiter character to limit the results (see S3 SDK)
+  # @param versions [Boolean] Also list previous versions of objects
   # @yield object [Aws::S3::Types::Object] if block is given, otherwise puts object attributes to stdout. 
-  def bucket_ls(prefix: nil, delimiter: nil)
+  def bucket_ls(prefix: nil, delimiter: nil, versions: false)
     begin
       size = 0
       count = 0
       next_marker = nil
       objects = nil
       begin
-        objects = @s3_client.list_objects(bucket: @bucket, prefix: prefix, delimiter: delimiter, :marker => next_marker)
+        objects = if versions
+          @s3_client.list_object_versions(bucket: @bucket, prefix: prefix, delimiter: delimiter, key_marker: next_marker)
+        else
+          @s3_client.list_objects(bucket: @bucket, prefix: prefix, delimiter: delimiter, :marker => next_marker)
+        end
         break if objects == nil
         if block_given?
           objects.common_prefixes.each do |prefix|
             yield OpenStruct.new(bucket: bucket, key: prefix.prefix, last_modified: Time.now, 
                                   owner: OpenStruct.new(display_name: "", id: ""), size: 0, storage_class: '')
           end
-          objects.contents.each  { |object| yield object }
+          if versions
+            objects.versions.each { |o| yield o }
+          else
+            objects.contents.each  { |o| yield o }
+          end
         else
           objects.common_prefixes.each { |prefix| puts prefix.prefix }
-          objects.contents.each do |object|
-                  puts "#{object.key}\t#{object.last_modified}\t#{object.owner.id}\t#{object.owner.display_name}\t#{object.size}"
-                  size += object.size
+          if versions
+            objects.versions.each do |o|
+                  puts "#{o.key}\t#{o.last_modified}\t#{o.owner.display_name}\t#{o.size}\t#{o.version_id}\t#{o.is_latest}"
+                  size += o.size
                   count += 1
+            end
+          else
+            objects.contents.each do |o|
+                    puts "#{o.key}\t#{o.last_modified}\t#{o.owner.id}\t#{o.owner.display_name}\t#{o.size}"
+                    size += o.size
+                    count += 1
+            end
           end
         end
-        next_marker = objects.next_marker
+        next_marker = versions ? objects.next_key_marker : objects.next_marker
       end until objects.is_truncated == false
       unless block_given?
         puts "bucket_ls: Total #{count} Files #{size/(1024.0 * 1024.0 * 1024.0)}GiB" 
