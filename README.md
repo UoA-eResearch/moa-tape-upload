@@ -2,26 +2,26 @@
 Script to aid physics is uploading images from tape archive to object store.
 
 ## bin/
-* uploadtape <tape_number>
+* uploadtape &lt;tape_number&gt;
 ```
-    mkdir -p tape/<tape_number>
-    read-tape tape/<tape_number>
-    unpack-dir tape/<tape_number>
-    upload-dir tape/<tape_number>
-    validate-dir -d tape/<tape-number>
+    mkdir -p tape/&lt;tape_number&gt;
+    read-tape tape/&lt;tape_number&gt;
+    unpack-dir tape/&lt;tape_number&gt;
+    upload-dir tape/&lt;tape_number&gt;
+    validate-dir -d tape/&lt;tape_number&gt;
 ```
   
-* read-tape <dest_directory>
+* read-tape &lt;dest_directory&gt;
 
-  Reads multiple tar images from the tape, into <dest_directory>
+  Reads multiple tar images from the tape, into &lt;dest_directory&gt;
   
-* unpack-dir <directory>
+* unpack-dir &lt;directory&gt;
   
-  Uncompresses files in <directory> and its subdirectories
+  Uncompresses files in &lt;directory&gt; and its subdirectories
     
-* upload-dir <directory>
+* upload-dir &lt;directory&gt;
   
-  Uploads files in <directory> and its subdirectories, into the Object store. 
+  Uploads files in &lt;directory&gt; and its subdirectories, into the Object store. 
     
   Uses a modified CFITSO listhead to extract fits headers to create a .info object.
     
@@ -34,15 +34,15 @@ Script to aid physics is uploading images from tape archive to object store.
   -?, --help                       Display this screen
 ```
   
-* moa-cat <object-key>
+* moa-cat &lt;object-key&gt;
 
   Cat object to stdout
   
-* moa-cp <object-key> <filename>
+* moa-cp &lt;object-key&gt; &lt;filename&gt;
 
   Copy Object to a file in the local file system
   
-* moa-ls [options] <object-name> ...
+* moa-ls [options] &lt;object-name&gt; ...
 
   Object Store Directory Listing (default is root directory level)
   Ending object name with '/' will list just that directory
@@ -58,11 +58,11 @@ Script to aid physics is uploading images from tape archive to object store.
   -?, --help                       Display this screen
 ```
 
-* moa-stat <object(s)-path>
+* moa-stat &lt;object(s)-path&gt;
 
   Count files, total size
   
-* listhead <filename>
+* listhead &ltfilename&gt;
   
   This program will list the header keywords in the specified HDU (Header Data Unit) of a file. 
   If a HDU name or number is not appended to the input root file name, then the program will list the keywords in every HDU in the file.
