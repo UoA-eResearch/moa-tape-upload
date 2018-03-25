@@ -3,8 +3,13 @@ Script to aid physics is uploading images from tape archive to object store.
 
 ## bin/
 * uploadtape <tape_number>
-
-  makes directory tape/<tape_number> then calls read-tape tape/<tape_number>, unpack-dir tape/<tape_number>, upload-dir tape/<tape_number>
+```
+    mkdir -p tape/<tape_number>
+    read-tape tape/<tape_number>
+    unpack-dir tape/<tape_number>
+    upload-dir tape/<tape_number>
+    validate-dir -d tape/<tape-number>
+```
   
 * read-tape <dest_directory>
 
@@ -16,7 +21,9 @@ Script to aid physics is uploading images from tape archive to object store.
     
 * upload-dir <directory>
   
-  Uploads files in <directory> and its subdirectories, into the Object store.
+  Uploads files in <directory> and its subdirectories, into the Object store. 
+    
+  Uses a modified CFITSO listhead to extract fits headers to create a .info object.
     
 * validate-upload [options] directory
 
