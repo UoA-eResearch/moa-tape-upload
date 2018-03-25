@@ -21,10 +21,12 @@ Script to aid physics is uploading images from tape archive to object store.
 * validate-upload [options] directory
 
   Recurse through the directory and subdirectories and compare the MD5 sum of each file with the object store versions.
+```
   -d, --delete                     remove files that have been successfully copied to the object store
   -v, --verbose                    Output more information
   -?, --help                       Display this screen
-    
+```
+  
 * moa-cat <object-key>
 
   Cat object to stdout
@@ -37,6 +39,7 @@ Script to aid physics is uploading images from tape archive to object store.
 
   Object Store Directory Listing (default is root directory level)
   Ending object name with '/' will list just that directory
+```
   -l                               List in long format
   -n                               Display user IDs numerically
   -d, --directories                List Only Directories
@@ -46,6 +49,7 @@ Script to aid physics is uploading images from tape archive to object store.
   -m, --md5                        Output MD5 checksum
   -V                               Include previous versions
   -?, --help                       Display this screen
+```
 
 * moa-stat <object(s)-path>
 
