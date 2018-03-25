@@ -1,19 +1,63 @@
 # moa-tape-upload
 Script to aid physics is uploading images from tape archive to object store.
 
-==bin/
+##bin/
 * uploadtape <tape_number>
+
   makes directory tape/<tape_number> then calls read-tape tape/<tape_number>, unpack-dir tape/<tape_number>, upload-dir tape/<tape_number>
   
 * read-tape <dest_directory>
+
   Reads multiple tar images from the tape, into <dest_directory>
+  
 * unpack-dir <directory>
+  
   Uncompresses files in <directory> and its subdirectories
     
 * upload-dir <directory>
+  
   Uploads files in <directory> and its subdirectories, into the Object store.
+    
+* validate-upload [options] directory
 
-==conf/
+  Recurse through the directory and subdirectories and compare the MD5 sum of each file with the object store versions.
+  -d, --delete                     remove files that have been successfully copied to the object store
+  -v, --verbose                    Output more information
+  -?, --help                       Display this screen
+    
+* moa-cat <object-key>
+
+  Cat object to stdout
+  
+* moa-cp <object-key> <filename>
+
+  Copy Object to a file in the local file system
+  
+* moa-ls [options] <object-name> ...
+
+  Object Store Directory Listing (default is root directory level)
+  Ending object name with '/' will list just that directory
+  -l                               List in long format
+  -n                               Display user IDs numerically
+  -d, --directories                List Only Directories
+  -o, --objects                    List Only objects
+  -h                               When used with the -l option, use unit suffixes: B, KiB, MiB, ...
+  -R                               Recursively list subdirectories encountered
+  -m, --md5                        Output MD5 checksum
+  -V                               Include previous versions
+  -?, --help                       Display this screen
+
+* moa-stat <object(s)-path>
+
+  Count files, total size
+  
+* listhead <filename>
+  
+  This program will list the header keywords in the specified HDU (Header Data Unit) of a file. 
+  If a HDU name or number is not appended to the input root file name, then the program will list the keywords in every HDU in the file.
+  Modified from the NASA version, so it doesn't print the HDU header, or trailing END line.
+
+##conf/
 example configuration.
 ```
 {
@@ -26,10 +70,10 @@ example configuration.
 
 ```
 
-==rlib/
+##rlib/
 Where that actual work is done.
 
-==Example run
+##Example run
 ```
 moa-tape:~> uploadtape 113
 2018-03-17 13:29:57 +1300

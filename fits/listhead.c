@@ -3,7 +3,8 @@
 #include <stdio.h>
 #include "cfitsio/fitsio.h"
 
-/*Slight hack to the original*/
+/*Slight hack to the original CFITSO source from NASA*/
+/*Change to output format, dropping HDU header and the trailing END*/
 
 int main(int argc, char *argv[])
 {
