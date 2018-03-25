@@ -92,7 +92,6 @@ def list(prefix:)
     count += 1
     size += o.size
   end
-  puts 
 end
 
 parse_options
