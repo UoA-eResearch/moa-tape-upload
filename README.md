@@ -1,7 +1,7 @@
 # moa-tape-upload
 Script to aid physics is uploading images from tape archive to object store.
 
-##bin/
+## bin/
 * uploadtape <tape_number>
 
   makes directory tape/<tape_number> then calls read-tape tape/<tape_number>, unpack-dir tape/<tape_number>, upload-dir tape/<tape_number>
@@ -57,7 +57,7 @@ Script to aid physics is uploading images from tape archive to object store.
   If a HDU name or number is not appended to the input root file name, then the program will list the keywords in every HDU in the file.
   Modified from the NASA version, so it doesn't print the HDU header, or trailing END line.
 
-##conf/
+## conf/
 example configuration.
 ```
 {
@@ -70,10 +70,10 @@ example configuration.
 
 ```
 
-##rlib/
+## rlib/
 Where that actual work is done.
 
-##Example run
+## Example run
 ```
 moa-tape:~> uploadtape 113
 2018-03-17 13:29:57 +1300
