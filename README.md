@@ -121,6 +121,9 @@ Tape file index: 15
 **************** Finished upload to object store 2018-03-17 19:04:10 +1300  (7127.202444861)
 2018-03-17 19:04:11 +1300
 
+***************** Validating upload and deleting files from local disk
+2018-03-17 21:04:11 +1300
+
 Files uploaded: ****************** Complete. If you had no errors, you can delete the directory with rm -rf /home/moa/tape/113
 ****************** Upload Log in /home/moa/tape/113.log (Json Fits metadata, line per file)
 ****************** Stdout Log in /home/moa/tape/113.stdout
