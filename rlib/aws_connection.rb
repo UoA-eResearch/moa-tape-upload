@@ -206,6 +206,50 @@ class AWS_connection
     end 
   end
   
+  def bucket_get_acl
+    begin
+      resp = @s3_client.get_bucket_acl( bucket: @bucket,  use_accelerate_endpoint: false )
+
+      puts "Owner Name: #{resp.owner.display_name}" #=> String
+      puts "Owner ID:   #{resp.owner.id}" #=> String
+      puts
+      resp.grants.each do |g| #=> Array
+        puts "Grantee name:  #{g.grantee.display_name}" #=> String
+        puts "Grantee email: #{g.grantee.email_address}" #=> String
+        puts "Grantee ID:    #{g.grantee.id}" #=> String
+        puts "Grantee Type:  #{g.grantee.type}" #=> String, one of "CanonicalUser", "AmazonCustomerByEmail", "Group"
+        puts "Grantee URI:   #{g.grantee.uri}" #=> String
+        puts "Grantee ACL:   #{g.permission}" #=> String, one of "FULL_CONTROL", "WRITE", "WRITE_ACP", "READ", "READ_ACP"
+        puts
+      end
+    rescue Exception => error
+        puts "bucket_get_acl(#{bucket}) : #{error}"
+    end 
+  end
+
+  #get object ACL
+  # @param key [String] Object key (filename)
+  def object_get_acl(key:)
+    begin
+      resp = @s3_client.get_object_acl(bucket: @bucket, key: key)
+      puts "OWNER DISPLAY NAME: #{resp.owner.display_name}" #=> String
+      puts "OWNER ID:           #{resp.owner.id}" #=> String
+      puts "GRANTEE:"
+      resp.grants.each do |g| #=> Array
+        puts "    DISPLAY NAME: #{g.grantee.display_name}" #=> String
+        puts "    EMAIL:        #{g.grantee.email_address}" #=> String
+        puts "    ID:           #{g.grantee.id}" #=> String
+        puts "    TYPE:         #{g.grantee.type}" #=> String, one of "CanonicalUser", "AmazonCustomerByEmail", "Group"
+        puts "    URI:          #{g.grantee.uri}" #=> String
+        puts "    PERMISSION:   #{g.permission}" #=> String, one of "FULL_CONTROL", "WRITE", "WRITE_ACP", "READ", "READ_ACP"
+        puts
+      end
+      puts "REQUEST CHARGED:    #{resp.request_charged}" #=> String, one of "requester"  rescue  Exception => error
+    rescue  Exception => error
+      puts "object_get_acl(#{bucket},#{key}) : #{error}"
+    end
+  end
+
   #Copy an object from one bucket to another (or the same bucket, with a different key)
   # @param src_bucket [String] If null, then the current bucket is used
   # @param src_key [String] The object to copy

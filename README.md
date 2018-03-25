@@ -62,6 +62,10 @@ Script to aid physics is uploading images from tape archive to object store.
 
   Count files, total size
   
+* moa-getfacl &lt;object(s)-path&gt;
+
+  Outputs bucket and object ACL
+
 * listhead &ltfilename&gt;
   
   This program will list the header keywords in the specified HDU (Header Data Unit) of a file. 
