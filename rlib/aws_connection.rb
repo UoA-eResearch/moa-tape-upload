@@ -301,6 +301,7 @@ class AWS_connection
   
   #Get object metadata
   # @param@ key [String] Object key (filename)
+  # @return metadata [String] Objects metadata
   def object_metadata(key:)
     begin
       resp = @s3_client.head_object(bucket: @bucket, key: key)
