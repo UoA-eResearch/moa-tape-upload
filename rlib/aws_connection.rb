@@ -304,7 +304,7 @@ class AWS_connection
   def object_metadata(key:)
     begin
       resp = @s3_client.head_object(bucket: @bucket, key: key)
-      return esp.metadata
+      return resp.metadata
     rescue StandardError => error
       puts "object_metadata(#{@bucket}, #{key}): #{error.class} #{error}"
     end
