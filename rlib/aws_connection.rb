@@ -49,7 +49,7 @@ class AWS_connection
     rescue Aws::S3::Errors::NotFound => error
       return nil
     rescue   StandardError => error
-      $stderr.puts "obj_md5(#{bucket}) : #{error.class} #{error}"
+      $stderr.puts "obj_md5(#{@bucket}) : #{error.class} #{error}"
     end
   end
   
@@ -83,7 +83,7 @@ class AWS_connection
             raise S3_Exists "Already present: '#{key}'"
           end
         rescue StandardError => error
-          $stderr.puts "AWS_connection(#{@bucket}).object_put_file(#{key}) MD5: #{error}"
+          $stderr.puts "AWS_connection(#{@bucket}).object_put_file(#{key}) MD5: #{error.class} #{error}"
         end 
       end
       #Binary read on file
@@ -91,11 +91,11 @@ class AWS_connection
         begin
           @s3_client.put_object(bucket: @bucket, key: key, body: file, metadata: metadata)
         rescue StandardError => error
-          raise "AWS_connection(#{@bucket}).object_put_file(key: #{key}) put_object: #{error}"
+          raise "AWS_connection(#{@bucket}).object_put_file(key: #{key}) put_object: #{error.class} #{error}"
         end 
       end
     rescue StandardError => error
-      raise "AWS_connection(#{@bucket}).object_put_file(key: #{key}) : #{error}"
+      raise "AWS_connection(#{@bucket}).object_put_file(key: #{key}) : #{error.class} #{error}"
     end 
   end
   
@@ -115,7 +115,7 @@ class AWS_connection
             return
           end
         rescue StandardError => error
-          $stderr.puts "AWS_connection(#{@bucket}).object_put_mem(#{key}) MD5: #{error}"
+          $stderr.puts "AWS_connection(#{@bucket}).object_put_mem(#{key}) MD5: #{error.class} #{error}"
         end
       end
       resp = @s3_client.put_object(
@@ -127,7 +127,7 @@ class AWS_connection
       )
       #puts "MD5: #{resp.etag}"
     rescue StandardError => error
-        $stderr.puts "AWS_connection(#{@bucket}).object_put_mem(#{key}): #{error}"
+        $stderr.puts "AWS_connection(#{@bucket}).object_put_mem(#{key}): #{error.class} #{error}"
     end 
   end
 
@@ -136,8 +136,8 @@ class AWS_connection
     begin
       resp = @s3_client.get_object(bucket: @bucket, key: key)
       return resp.body.string
-    rescue  Exception => error
-      puts "object_get_mem(#{@bucket}, #{key}) : #{error}"
+    rescue  StandardError => error
+      puts "object_get_mem(#{@bucket}, #{key}) : #{error.class} #{error}"
     end
   end
 
@@ -147,8 +147,8 @@ class AWS_connection
   def object_get_file(key:, filename:, range: nil)
     begin
       resp = @s3_client.get_object( response_target: filename, bucket: @bucket, key: key, range: nil)
-    rescue  Exception => error
-      puts "object_get_file(#{@bucket},#{key},#{filename},#{range}) : #{error}"
+    rescue  StandardError => error
+      puts "object_get_file(#{@bucket},#{key},#{filename},#{range}) : #{error.class} #{error}"
     end
   end  
   
@@ -202,7 +202,7 @@ class AWS_connection
         puts "bucket_ls: Total #{count} Files #{size/(1024.0 * 1024.0 * 1024.0)}GiB" 
       end
     rescue StandardError => error
-        puts "bucket_ls(#{@bucket}) : #{error}"
+        puts "bucket_ls(#{@bucket}) : #{error.class} #{error}"
     end 
   end
   
@@ -222,8 +222,8 @@ class AWS_connection
         puts "Grantee ACL:   #{g.permission}" #=> String, one of "FULL_CONTROL", "WRITE", "WRITE_ACP", "READ", "READ_ACP"
         puts
       end
-    rescue Exception => error
-        puts "bucket_get_acl(#{bucket}) : #{error}"
+    rescue StandardError => error
+        puts "bucket_get_acl(#{@bucket}) : #{error.class} #{error}"
     end 
   end
 
@@ -245,8 +245,8 @@ class AWS_connection
         puts
       end
       puts "REQUEST CHARGED:    #{resp.request_charged}" #=> String, one of "requester"  rescue  Exception => error
-    rescue  Exception => error
-      puts "object_get_acl(#{bucket},#{key}) : #{error}"
+    rescue  StandardError => error
+      puts "object_get_acl(#{@bucket},#{key}) : #{error.class} #{error}"
     end
   end
 
@@ -260,7 +260,7 @@ class AWS_connection
       src_bucket ||= @bucket
       @s3_client.copy_object( copy_source: "/#{src_bucket}/#{src_key}", bucket: dest_bucket, key: dest_key, metadata_directive: "COPY")
     rescue  StandardError => error
-      puts "object_copy(#{src_bucket},#{src_key},#{dest_bucket},#{dest_key}) : #{error}"
+      puts "object_copy(#{src_bucket},#{src_key},#{dest_bucket},#{dest_key}) : #{error.class} #{error}"
     end
   end
   
@@ -294,10 +294,20 @@ class AWS_connection
         count += 1
       end
     rescue StandardError => error
-        puts "bucket_size(#{@bucket}) : #{error}"
+        puts "bucket_size(#{@bucket}) : #{error.class} #{error}"
     end 
     return count, size
   end
   
+  #Get object metadata
+  # @param@ key [String] Object key (filename)
+  def object_metadata(key:)
+    begin
+      resp = @s3_client.head_object(bucket: @bucket, key: key)
+      return esp.metadata
+    rescue StandardError => error
+      puts "object_metadata(#{@bucket}, #{key}): #{error.class} #{error}"
+    end
+  end
 end
 
