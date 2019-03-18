@@ -23,7 +23,7 @@ def validate_directory(aws_fd:, directory: , delete: false, verbose: false)
           if md5 == nil 
             puts "file #{fn}: key #{key} Doesn't exist in object store"
           elsif md5 != ( file_md5 = aws_fd.file_md5(filename: full_name) )
-            puts "file #{fn}: key #{key} Different MD5 sum file: #{file_md5} Object-stare: #{md5}"
+            puts "file #{fn}: key #{key} Different MD5 sum file: #{file_md5} Object-store: #{md5}"
           elsif delete
             `/bin/rm -f #{full_name}`
             puts "Deleted:   #{full_name}" if verbose

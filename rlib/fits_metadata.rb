@@ -169,7 +169,8 @@ class Fits_metadata
   end
 
   def set_info_filename
-    @info_filename = "#{@full_metadata['RUN']}-#{@full_metadata['FIELD']}-#{@full_metadata['COLOUR']}.info"
+    @info_filename = @info_filename.gsub(/-[0-9]+\.info/,'.info') #Remove the chip number.
+    #@info_filename = "#{@full_metadata['RUN']}-#{@full_metadata['FIELD']}-#{@full_metadata['COLOUR']}.info"
   end
   
   #log is json lines of metadata from the fits files we have uploaded
