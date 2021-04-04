@@ -1,9 +1,9 @@
 #!/usr/local/bin/ruby
-
 require 'wikk_configuration' #json to class with accessor methods
 require 'aws-sdk' #gem install aws-sdk
 require 'digest'
 require_relative 's3_exists.rb'
+
 =begin 
 #Example
 
@@ -82,6 +82,8 @@ class AWS_connection
           if md5 != nil && md5 == file_md5(filename: filename) #Already in object store with same MD5 checksum.
             raise S3_Exists "Already present: '#{key}'"
           end
+        rescue S3_Exists => e
+          raise
         rescue StandardError => error
           $stderr.puts "AWS_connection(#{@bucket}).object_put_file(#{key}) MD5: #{error.class} #{error}"
         end 
@@ -311,4 +313,3 @@ class AWS_connection
     end
   end
 end
-
