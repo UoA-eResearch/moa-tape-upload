@@ -35,8 +35,8 @@ def upload_directory(host, destination)
 end
 
 
-Dir.chdir "#{File.dirname(__FILE__)}/rlib" 
+Dir.chdir "#{__dir__}/rlib" 
 upload_directory(HOST, RLIB_DIR)
 
-Dir.chdir "#{File.dirname(__FILE__)}/bin" 
+Dir.chdir "#{__dir__}/bin" 
 upload_directory(HOST, BIN_DIR)
