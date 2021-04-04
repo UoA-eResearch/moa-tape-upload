@@ -78,9 +78,9 @@ class AWS_connection
     begin
       if not_if_exits
         begin
-          md5 = obj_md5(key: key)
+          md5 = obj_md5(key: key) # Object exists
           if md5 != nil && md5 == file_md5(filename: filename) #Already in object store with same MD5 checksum.
-            raise S3_Exists "Already present: '#{key}'"
+            raise S3_Exists.new( "Already present: '#{key}'" )
           end
         rescue S3_Exists => e
           raise
