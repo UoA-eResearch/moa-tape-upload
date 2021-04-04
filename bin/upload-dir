@@ -28,3 +28,4 @@ if ARGV.length == 1
 else
   $stderr.puts "Usage: upload <directory>"
 end
+
