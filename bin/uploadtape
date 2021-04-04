@@ -15,7 +15,7 @@ if ARGV.length == 1
   end
   
   puts Time.now
-  puts '***************** Reading Tape'
+  puts "***************** Reading Tape #{tape_number}"
   `/home/moa/bin/read-tape #{dir} > #{dir + '.stdout'}`
   puts Time.now
   puts
@@ -24,9 +24,9 @@ if ARGV.length == 1
     `/bin/echo "Error from: read-tape '#{dir}' exit code #{$?}"  >> #{dir + '.stdout'}`
     exit $?
   end
-  puts '***************** Completed Reading Tape (you can start another while the uploading to the object store completes)'
+  puts "***************** Completed Reading Tape #{tape_number} (you can start another while the uploading to the object store completes)"
   
-  puts '***************** Uncompressing files from tape'
+  puts "***************** Uncompressing files from tape #{tape_number}"
   `/home/moa/bin/unpack-dir #{dir} >> #{dir + '.stdout'}`
   puts Time.now
   puts
@@ -36,7 +36,7 @@ if ARGV.length == 1
     exit $?
   end
     
-  puts '***************** Uploading to object store'
+  puts "***************** Uploading to object store #{tape_number}"
   `/home/moa/bin/upload-dir #{dir} >> #{dir + '.stdout'}`
   puts Time.now
   puts
@@ -48,7 +48,7 @@ if ARGV.length == 1
   print "Files uploaded: "
   `/usr/bin/wc -l #{dir}.log`
  
-  puts '***************** Validating upload and deleting files from local disk'
+  puts "***************** Validating upload and deleting files from local disk #{tape_number}"
   `/home/moa/bin/validate-upload -d  #{dir} >> #{dir + '.stdout'}`
   puts Time.now
   puts
@@ -63,4 +63,3 @@ if ARGV.length == 1
 else
   $stderr.puts "Usage: uploadtape <tape-number>"
 end
-
