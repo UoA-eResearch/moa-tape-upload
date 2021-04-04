@@ -3,6 +3,7 @@ require_relative 'aws_connection.rb'
 require_relative 'fits_metadata.rb'
 require_relative 'diphot_metadata.rb'
 require_relative 'log_metadata.rb'
+require_relative 's3_exists.rb'
 
 #Recursive copy of the directory to the object store bucket
 #Looks for .fit files, and if found, extracts fits metadata into a separate .info object.
