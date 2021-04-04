@@ -1,0 +1,149 @@
+#!/usr/local/bin/ruby
+require 'fileutils'
+require 'optparse'
+
+# Exit, if we get SIGINT or SIGTERM
+Signal.trap("INT") { exit 2 }
+Signal.trap("TERM") {  exit 15}
+
+# Parses ARGV args
+# Result in @options
+def process_args
+  @options = { :sequence_num => nil, :directory => nil, :verbose => false }
+  
+  @optparse = OptionParser.new do|opts|
+    opts.banner = "Usage: Upload directory to MOA repository"
+
+    @options[:sequence_num] = nil
+    opts.on( '-s', '--seq SEQ', 'disk upload sequence number' ) do |seq|
+      @options[:sequence_num] = seq
+    end
+
+    @options[:directory] = nil
+    opts.on( '-d', '--dir DIR', 'directory to upload' ) do |dir|
+      @options[:directory] = dir
+    end
+
+    @options[:verbose] = false
+    opts.on( '-v', '--verbose', 'Output more information' ) do
+      @options[:verbose] = true
+    end
+
+    opts.on( '-?', '--help', 'Display this screen' ) do
+      puts opts
+    exit
+    end
+  end
+
+  @optparse.parse!
+ 
+  if @options[:directory].nil? || @options[:sequence_num].nil?
+    puts @optparse
+    exit -1
+  end
+end
+
+def init_working_dir(working_dir_base_name:, disk_num:, batch_num:)
+  #Make the directory, and any parent directories
+  working_dir = "#{working_dir_base_name}/#{disk_num}-#{batch_num}"
+  `/bin/mkdir -p #{working_dir}`
+  if $? != 0
+    $stderr.puts "Error from: /bin/mkdir -p '#{working_dir}' exit code #{$?}"
+    exit $?
+  end
+  return working_dir
+end
+  
+def process_disk_directory(source_directory:, 
+                           working_dir_base_name:, 
+                           disk_num:,
+                           batch_num: 1, 
+                           batch_size:)
+  batch_count = 0   # Number of files we have processed in this batch, in this dir.
+  working_dir = nil # Declaring this var.
+  puts Time.now
+  puts "***************** Processing Disk Directory #{source_directory}"
+  
+  Dir.open(source_directory).each do |filename|
+    if filename != '.' && filename != '..' #ignore parent, and current directories entries.
+      qualified_filename =  "#{source_directory}/#{filename}"
+      begin
+        stat_record =  File.stat(qualified_filename) #It is possible for this to cause an exception if symlink points no where.
+        if  stat_record.symlink? == false #Otherwise ignore
+          if stat_record.directory? 
+            # Ignore sub-directories. Do these one by one.
+            # Might recurse later?
+          elsif stat_record.file? 
+            if batch_count == 0
+              # Need a working dir for this batch
+              working_dir = init_working_dir(working_dir_base_name: working_dir_base_name, disk_num: disk_num, batch_num: batch_num)
+            end
+            batch_count += 1
+            FileUtils.cp(qualified_filename, working_dir)
+            if batch_count == batch_size
+              process_batch(working_dir: working_dir)
+              batch_count = 0 # Reset, for next batch
+              batch_num += 1  # Could be starting another batch (unless there are no more files)
+            end
+          end
+        end
+      rescue StandardError => e
+        warn "process_disk_directory(#{source_directory}, #{working_dir}, #{disk_num}, #{batch_num}, #{batch_size}): #{e}"
+      end
+    end
+  end
+  
+  # Catch all, for a partial batch.
+  process_batch(working_dir: working_dir) if batch_count > 0
+  
+end
+
+def process_batch(working_dir:)
+  puts Time.now
+  puts "processing tmp dir #{working_dir}"
+
+  puts '***************** Uncompressing files in working dir'
+  `/home/moa/bin/unpack-dir #{working_dir} >> #{working_dir + '.stdout'}`
+  puts Time.now
+  puts
+  if $? != 0
+    $stderr.puts "unpack-dir Failed with exit code #{$?}"
+    `/bin/echo "Error from: unpack-dir '#{working_dir}' exit code #{$?}"  >> #{working_dir + '.stdout'}`
+    exit $?
+  end
+    
+  puts '***************** Uploading to object store'
+  `/home/moa/bin/upload-dir #{working_dir} >> #{working_dir + '.stdout'}`
+  puts Time.now
+  puts
+  if $? != 0
+    $stderr.puts "upload-dir Failed with exit code #{$?}"
+    `/bin/echo "Error from: upload-dir '#{working_dir}' exit code #{$?}"  >> #{working_dir + '.stdout'}`
+    exit $?
+  end
+  print "Files uploaded: "
+  `/usr/bin/wc -l #{working_dir}.log`
+
+  puts '***************** Validating upload and deleting files from local disk'
+  `/home/moa/bin/validate-upload --delete #{working_dir} >> #{working_dir + '.stdout'}`
+  puts Time.now
+  puts
+  if $? != 0
+    $stderr.puts "validate-upload Failed with exit code #{$?}"
+    `/bin/echo "Error from: validate-upload -d '#{working_dir}' exit code #{$?}"  >> #{working_dir + '.stdout'}`
+    exit $?
+  end
+
+  puts "****************** Upload Log in #{working_dir.gsub(/\/$/, '')}.log (Json Fits metadata, line per file)"
+  puts "****************** Stdout Log in #{working_dir.gsub(/\/$/, '')}.stdout"  
+end
+
+  
+
+BATCH_SIZE=5000
+process_args
+process_disk_directory(source_directory: @options[:directory], 
+                       working_dir_base_name: "/home/moa/disk", 
+                       disk_num: @options[:sequence_num], 
+                       batch_num: 1,
+                       batch_size: BATCH_SIZE)
