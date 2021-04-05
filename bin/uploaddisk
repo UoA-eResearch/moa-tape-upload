@@ -6,6 +6,8 @@ require 'optparse'
 Signal.trap("INT") { exit 2 }
 Signal.trap("TERM") {  exit 15}
 
+BATCH_SIZE=5000 # Default to 5000 files in each batch copied from the disk, to the working dir
+
 # Parses ARGV args
 # Result in @options
 def process_args
@@ -15,12 +17,22 @@ def process_args
     opts.banner = "Usage: Upload directory to MOA repository"
 
     @options[:sequence_num] = nil
-    opts.on( '-s', '--seq SEQ', 'disk upload sequence number' ) do |seq|
+    opts.on( '-s', '--seq SEQ', Integer, 'disk upload sequence number' ) do |seq|
       @options[:sequence_num] = seq
     end
 
+    @options[:batch] = 1
+    opts.on( '-b', '--batch BATCH', Integer, 'Start from batch number' ) do |batch|
+      @options[:batch] = batch
+    end
+
+    @options[:batchsize] = BATCH_SIZE
+    opts.on( '-n', '--batchsize BATCHSIZE', Integer, 'Set Batch Size (Default 5000 files)' ) do |batchsize|
+      @options[:batchsize] = batchsize
+    end
+
     @options[:directory] = nil
-    opts.on( '-d', '--dir DIR', 'directory to upload' ) do |dir|
+    opts.on( '-d', '--dir DIR', String, 'directory to upload' ) do |dir|
       @options[:directory] = dir
     end
 
@@ -57,13 +69,14 @@ end
 def process_disk_directory(source_directory:, 
                            working_dir_base_name:, 
                            disk_num:,
-                           batch_num: 1, 
-                           batch_size:)
+                           start_batch: 1, 
+                           batch_size: BATCH_SIZE)
+  batch_num = 1     # Will increment every batch_size files
   batch_count = 0   # Number of files we have processed in this batch, in this dir.
   working_dir = nil # Declaring this var.
   puts Time.now
-  puts "***************** Processing Disk Directory #{source_directory}"
-  
+  puts "***************** Processing Disk Directory #{source_directory} in batches of #{batch_size}"
+    
   Dir.open(source_directory).each do |filename|
     if filename != '.' && filename != '..' #ignore parent, and current directories entries.
       qualified_filename =  "#{source_directory}/#{filename}"
@@ -74,35 +87,43 @@ def process_disk_directory(source_directory:,
             # Ignore sub-directories. Do these one by one.
             # Might recurse later?
           elsif stat_record.file? 
-            if batch_count == 0
-              # Need a working dir for this batch
-              working_dir = init_working_dir(working_dir_base_name: working_dir_base_name, disk_num: disk_num, batch_num: batch_num)
-            end
-            batch_count += 1
-            FileUtils.cp(qualified_filename, working_dir)
-            if batch_count == batch_size
-              process_batch(working_dir: working_dir)
-              batch_count = 0 # Reset, for next batch
-              batch_num += 1  # Could be starting another batch (unless there are no more files)
+            if  batch_num >= start_batch  # We process files, after the start batch number.
+              if batch_count == 0 # Need a working dir for this batch
+                working_dir = init_working_dir(working_dir_base_name: working_dir_base_name, disk_num: disk_num, batch_num: batch_num)
+              end
+              batch_count += 1 # Another file
+              FileUtils.cp(qualified_filename, working_dir)
+              if batch_count == batch_size
+                process_batch(working_dir: working_dir, batch: batch_num)
+                batch_count = 0 # Reset, for next batch
+                batch_num += 1  # Could be starting another batch (unless there are no more files)
+              end
+            else # Haven't reached the start batch yet, but we need to count files until we do.
+              batch_count += 1 # Another file
+              if batch_count == batch_size
+                batch_count = 0 # Reset, for next batch
+                batch_num += 1  # Could be starting another batch (unless there are no more files)
+              end
             end
           end
         end
       rescue StandardError => e
-        warn "process_disk_directory(#{source_directory}, #{working_dir}, #{disk_num}, #{batch_num}, #{batch_size}): #{e}"
+        backtrace = e.backtrace[0].split(":")
+        warn "process_disk_directory(#{source_directory}, #{working_dir}, #{disk_num}, #{start_batch}, #{batch_size}): #{batch_num}: (#{File.basename(backtrace[-3])} #{backtrace[-2]}): #{e}"
       end
     end
   end
   
   # Catch all, for a partial batch.
-  process_batch(working_dir: working_dir) if batch_count > 0
+  process_batch(working_dir: working_dir, batch: batch_num) if batch_count > 0 && batch_num >= start_batch
   
 end
 
-def process_batch(working_dir:)
+def process_batch(working_dir:, batch: )
   puts Time.now
   puts "processing tmp dir #{working_dir}"
 
-  puts '***************** Uncompressing files in working dir'
+  puts '***************** Uncompressing files in working dir, batch #{batch}'
   `/home/moa/bin/unpack-dir #{working_dir} >> #{working_dir + '.stdout'}`
   puts Time.now
   puts
@@ -140,10 +161,9 @@ end
 
   
 
-BATCH_SIZE=5000
 process_args
 process_disk_directory(source_directory: @options[:directory], 
                        working_dir_base_name: "/home/moa/disk", 
                        disk_num: @options[:sequence_num], 
-                       batch_num: 1,
-                       batch_size: BATCH_SIZE)
+                       start_batch: @options[:batch],
+                       batch_size: @options[:batchsize])
