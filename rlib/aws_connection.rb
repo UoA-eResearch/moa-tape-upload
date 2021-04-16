@@ -82,7 +82,7 @@ class AWS_connection
           if md5 != nil && md5 == file_md5(filename: filename) #Already in object store with same MD5 checksum.
             raise S3_Exists.new( "Already present: '#{key}'" )
           end
-        rescue S3_Exists => e
+        rescue S3_Exists => e # Need to catch this, as it is a subclass of StandardError, so would be caught next.
           raise
         rescue StandardError => error
           $stderr.puts "AWS_connection(#{@bucket}).object_put_file(#{key}) MD5: #{error.class} #{error}"
@@ -96,7 +96,7 @@ class AWS_connection
           raise "AWS_connection(#{@bucket}).object_put_file(key: #{key}) put_object: #{error.class} #{error}"
         end 
       end
-    rescue StandardError => error
+    rescue StandardError => error # Will catch and report the S3_Exists we raise above.
       raise "AWS_connection(#{@bucket}).object_put_file(key: #{key}) : #{error.class} #{error}"
     end 
   end
