@@ -1,0 +1,81 @@
+#!/usr/local/bin/ruby
+require 'optparse'
+require_relative '../rlib/aws_connection.rb'
+
+# parse command line arguments
+# Sets @options based on command line args
+def parse_options
+  @options = {}
+  @optparse = OptionParser.new do |opts|
+    opts.banner = "Usage: delete_old_versions [options] <object-name> ...\n\n    Remove old versions from the repository\n "
+
+    # Define the options, and what they do
+    @options[:update] = false
+    opts.on( '-u', '--update', 'Actually delete, rather than just report' ) do
+      @options[:update] = true
+    end
+
+    @options[:verbose] = false
+    opts.on( '-V', '--verbose', 'Excessing output' ) do
+      @options[:verbose] = true
+    end
+
+    opts.on( '-?', '--help', 'Display this screen' ) do
+      puts opts
+      exit 0
+    end
+  end
+
+  @optparse.parse!
+end
+
+def human_size(n)
+  if n < 1024
+    '%6dB' % n
+  elsif n < 1048576
+    format('%4.1fKiB', (n / 1024.0))
+  elsif n < 1073741824
+    format('%4.1dMiB', (n / 1048576.0))
+  elsif n < 1099511627776
+    format('%4.1fGiB', (n / 1073741824.0))
+  elsif n < 1125899906842624
+    format('%4.1fTiB', (n / 1099511627776.0))
+  else
+    format('%4.1fPiB', (n / 1125899906842624.0))
+  end
+end
+
+def delete_one_by_one(prefix:)
+  kept = 0
+  deleted = 0
+  size = 0
+  deleted_size = 0
+
+  delimiter = nil
+  @aws.bucket_ls(prefix: prefix.gsub(/^\//, ''), delimiter: delimiter, versions: true ) do |o|
+    next if o.key =~ /\/$/  # Don't delete the dummy directory objects
+
+    if o.size == 0
+      puts "Deleting #{o[:key]} size #{human_size(o.size)} version #{o[:version_id]}" if @options[:verbose]
+      deleted += 1
+      # @aws.object_delete(key: o[:key], version_id: o[:version_id]) if  @options[:update]
+    else
+      kept += 1
+      size += o.size
+    end
+  end
+  puts "Kept #{kept} files #{human_size(size)}"
+  puts "Deleted #{deleted} files #{human_size(deleted_size)}"
+end
+
+ARGV = [ '/', '--verbose' ] if ARGV.length == 0
+parse_options
+
+Signal.trap('INT') { exit 2 }
+Signal.trap('TERM') {  exit 15 }
+
+@aws = AWS_connection.new(config_file: "#{__dir__}/../conf/conf_internal.json")   # We are inside the Uni network
+
+ARGV.each do |arg|
+  delete_one_by_one(prefix: arg)
+end

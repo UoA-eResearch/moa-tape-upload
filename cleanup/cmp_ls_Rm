@@ -1,0 +1,84 @@
+#!/usr/local/ruby3/bin/ruby
+# Compare output of moa-ls -Rm
+
+source1_md5 = {}
+source2_md5 = {}
+source1_count = 0
+source2_count = 0
+in_source1_count_exact = 0
+in_source1_count_path_diff = 0
+in_source1_count_possible = 0
+not_in_source1_count = 0
+not_in_source2_count = 0
+
+# Preload source1
+puts '*********** Loading Source 1 ************'
+File.read(ARGV[0]).each_line do |l|
+  l.chomp!
+  l.gsub(/^(.*)\s([0-9A-Fa-f])$/, "\1\t\2")
+  tokens = l.split("\t")
+
+  if source1_md5[tokens[1]].nil?
+    source1_md5[tokens[1]] = tokens[0]
+    source1_count += 1
+  elsif tokens[0].downcase == source1_md5[tokens[1]].downcase
+    puts "Exact filename match #{source1_md5[tokens[1]]}"
+  elsif File.basename(tokens[0]).downcase == File.basename(source1_md5[tokens[1]]).downcase
+    puts "Path difference  #{tokens[0]} present as #{source1_md5[tokens[1]]}"
+  else
+    puts "Possible duplicate #{tokens[0]} present as #{source1_md5[tokens[1]]}"
+  end
+end
+
+exit if ARGV.length == 1
+puts
+
+puts '*********** Loading Source 2 ************'
+# Check source1 against source2
+File.read(ARGV[1]).each_line do |l|
+  l.chomp!
+  l.gsub(/^(.*)\s([0-9A-Fa-f])$/, "\1\t\2")
+  tokens = l.split("\t")
+
+  if source2_md5[tokens[1]].nil?
+    source2_md5[tokens[1]] = tokens[0]
+    source2_count += 1
+  elsif tokens[0].downcase == source2_md5[tokens[1]].downcase
+    puts "Exact filename match #{source2_md5[tokens[1]]}"
+  elsif File.basename(tokens[0]).downcase == File.basename(source2_md5[tokens[1]]).downcase
+    puts "Path difference  #{tokens[0]} present as #{source2_md5[tokens[1]]}"
+  else
+    puts "Possible duplicate #{tokens[0]} present as #{source2_md5[tokens[1]]}"
+  end
+end
+
+puts
+puts '*********** Checking Source 1 vs 2 ************'
+
+source1_md5.each do |k, v|
+  if source2_md5[k].nil?
+    not_in_source2_count += 1
+  elsif source2_md5[k].downcase == v.downcase
+    in_source1_count_exact += 1
+    puts "Exact filename match #{v}"
+  elsif File.basename(v).downcase == File.basename(source2_md5[k]).downcase
+    in_source1_count_path_diff += 1
+    puts "Path difference  #{v} present as #{source2_md5[k]}"
+  else
+    in_source1_count_possible += 1
+    puts "Possible duplicate #{v} present as #{source2_md5[k]}"
+  end
+end
+
+source2_md5.each do |k, _v|
+  if source1_md5[k].nil?
+    not_in_source1_count += 1
+  end
+end
+
+puts '*********** Summary ************'
+puts "Source 1 count           #{source1_count}"
+puts "Source 2 count           #{source2_count}"
+puts "source 2 in source 1     Exact #{in_source1_count_exact} Name #{in_source1_count_path_diff} Possible #{in_source1_count_possible}"
+puts "source 1 not in source 2 #{not_in_source2_count}"
+puts "source 2 not in source 1 #{not_in_source1_count}"

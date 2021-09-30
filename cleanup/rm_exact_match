@@ -1,0 +1,37 @@
+#!/usr/local/bin/ruby
+# Delete the lower case version of the object,
+# if there is an upper case version.
+
+require_relative '../rlib/aws_connection.rb'
+
+@size = 0
+
+def delete(key)
+  @aws.bucket_ls(prefix: key.gsub(/^\//, ''), delimiter: nil, versions: true ) do |o|
+    puts "deleting #{o[:key]} version #{o[:version_id]}"
+    @size += o[:size]
+    @aws.object_delete(key: o[:key], version_id: o[:version_id])
+  end
+end
+
+@aws = AWS_connection.new(config_file: "#{__dir__}/../conf/conf_internal.json")   # We are inside the Uni network
+
+File.read(ARGV[0]).each_line do |s|
+  s.chomp!
+  tokens = s.gsub(/^Exact filename match /, '').split(' ')
+  if (l = tokens.length) != 2
+    t0 = tokens[0...l / 2].join(' ')
+    t1 = tokens[l / 2..-1].join(' ')
+    tokens[0] = t0
+    tokens[1] = t1
+  end
+
+  # Delete the lower case version
+  if tokens[0].bytes.sum < tokens[1].bytes.sum
+    delete tokens[1]
+  else
+    delete tokens[0]
+  end
+end
+
+puts "Freed #{@size}"
