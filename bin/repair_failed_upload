@@ -1,0 +1,45 @@
+#!/usr/local/bin/ruby
+Signal.trap('INT') { exit 2 }
+Signal.trap('TERM') { exit 15 }
+
+if ARGV.length == 1
+  tape_number = ARGV[0]
+  dir = "/home/moa/tape/#{tape_number}"
+
+  puts "***************** Uncompressing files from #{dir}"
+  `/home/moa/bin/unpack-dir #{dir} >> #{dir + '.repair'}`
+  puts Time.now
+  puts
+  if $CHILD_STATUS != 0
+    $stderr.puts "unpack-dir Failed with exit code #{$CHILD_STATUS}"
+    `/bin/echo "Error from: unpack-dir '#{dir}' exit code #{$CHILD_STATUS}"  >> #{dir + '.repair'}`
+    exit $CHILD_STATUS
+  end
+
+  puts "***************** Uploading to object store #{dir}"
+  `/home/moa/bin/upload-dir-repair #{dir} >> #{dir + '.repair'}`
+  puts Time.now
+  puts
+  if $CHILD_STATUS != 0
+    $stderr.puts "upload-dir-repair Failed with exit code #{$CHILD_STATUS}"
+    `/bin/echo "Error from: upload-dir.repair '#{dir}' exit code #{$CHILD_STATUS}"  >> #{dir + '.repair'}`
+    exit $CHILD_STATUS
+  end
+  print 'Files uploaded: '
+  `/usr/bin/wc -l #{dir}.log2`
+
+  puts "***************** Validating upload and deleting files from local disk #{dir}"
+  `/home/moa/bin/validate-upload -d  #{dir} >> #{dir + '.repair'}`
+  puts Time.now
+  puts
+  if $CHILD_STATUS != 0
+    $stderr.puts "validate-upload Failed with exit code #{$CHILD_STATUS}"
+    `/bin/echo "Error from: validate-upload '#{dir}' exit code #{$CHILD_STATUS}"  >> #{dir + '.repair'}`
+    exit $CHILD_STATUS
+  end
+
+  puts "****************** Upload Log in #{dir.gsub(/\/$/, '')}.log2 (Json Fits metadata, line per file)"
+  puts "****************** Stdout Log in #{dir.gsub(/\/$/, '')}.repair"
+else
+  $stderr.puts 'Usage: repair_failed_upload <tape-number>'
+end

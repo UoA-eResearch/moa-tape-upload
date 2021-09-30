@@ -1,0 +1,30 @@
+#!/usr/local/bin/ruby
+require_relative '../rlib/object_put_dir.rb'
+
+Signal.trap('INT') { exit 2 }
+Signal.trap('TERM') { exit 15 }
+
+# Get an S3 connection through to the UoA object store
+# aws = AWS_connection.new(config_file: "#{File.expand_path(File.dirname(__FILE__))}/../conf/conf_internal_test.json")   #We are inside the Uni network testing
+aws = AWS_connection.new(config_file: "#{__dir__}/../conf/conf_internal.json")   # We are inside the Uni network
+# aws = AWS_connection.new(config_file: "#{File.expand_path(File.dirname(__FILE__))}/../conf/conf_external.json")  #We are outside the Uni network
+
+if ARGV.length == 1
+  start_time = Time.now
+  puts "**************** #{ARGV[1]} Starting upload to object store #{start_time}"
+  $stderr.puts "**************** Starting upload to object store #{start_time}"
+  if ARGV.length > 0
+    ARGV.each do |filename|
+      if File.stat(filename).directory?
+        object_put_dir(aws_fd: aws, directory: filename, strip_base_dir: filename, misc_prefix: 'misc', metadata_log: "#{filename.gsub(/\/$/, '')}.log2" )
+      else
+        aws.object_put_file(key: filename, filename: filename, not_if_exits: true)
+      end
+    end
+  end
+  end_time = Time.now
+  puts "**************** Finished upload to object store #{end_time}  (#{end_time - start_time})"
+  $stderr.puts "**************** Finished upload to object store #{end_time}  (#{end_time - start_time})"
+else
+  $stderr.puts 'Usage: upload <directory>'
+end
