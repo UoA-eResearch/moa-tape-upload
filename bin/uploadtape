@@ -1,65 +1,65 @@
 #!/usr/local/bin/ruby
 
-Signal.trap("INT") { exit 2 }
-Signal.trap("TERM") {  exit 15}
+Signal.trap('INT') { exit 2 }
+Signal.trap('TERM') { exit 15 }
 
 if ARGV.length == 1
   tape_number = ARGV[0]
   dir = "/home/moa/tape/#{tape_number}"
-  
-  #Make the directory
+
+  # Make the directory
   `/bin/mkdir -p #{dir}`
-  if $? != 0
-    $stderr.puts "Error from: /bin/mkdir -p '#{dir}' exit code #{$?}"
-    exit $?
+  if $CHILD_STATUS != 0
+    $stderr.puts "Error from: /bin/mkdir -p '#{dir}' exit code #{$CHILD_STATUS}"
+    exit $CHILD_STATUS
   end
-  
+
   puts Time.now
   puts "***************** Reading Tape #{tape_number}"
   `/home/moa/bin/read-tape #{dir} > #{dir + '.stdout'}`
   puts Time.now
   puts
-  if $? != 0
-    $stderr.puts "read-tape Failed with exit code #{$?}"
-    `/bin/echo "Error from: read-tape '#{dir}' exit code #{$?}"  >> #{dir + '.stdout'}`
-    exit $?
+  if $CHILD_STATUS != 0
+    $stderr.puts "read-tape Failed with exit code #{$CHILD_STATUS}"
+    `/bin/echo "Error from: read-tape '#{dir}' exit code #{$CHILD_STATUS}"  >> #{dir + '.stdout'}`
+    exit $CHILD_STATUS
   end
   puts "***************** Completed Reading Tape #{tape_number} (you can start another while the uploading to the object store completes)"
-  
+
   puts "***************** Uncompressing files from tape #{tape_number}"
   `/home/moa/bin/unpack-dir #{dir} >> #{dir + '.stdout'}`
   puts Time.now
   puts
-  if $? != 0
-    $stderr.puts "unpack-dir Failed with exit code #{$?}"
-    `/bin/echo "Error from: unpack-dir '#{dir}' exit code #{$?}"  >> #{dir + '.stdout'}`
-    exit $?
+  if $CHILD_STATUS != 0
+    $stderr.puts "unpack-dir Failed with exit code #{$CHILD_STATUS}"
+    `/bin/echo "Error from: unpack-dir '#{dir}' exit code #{$CHILD_STATUS}"  >> #{dir + '.stdout'}`
+    exit $CHILD_STATUS
   end
-    
+
   puts "***************** Uploading to object store #{tape_number}"
   `/home/moa/bin/upload-dir #{dir} >> #{dir + '.stdout'}`
   puts Time.now
   puts
-  if $? != 0
-    $stderr.puts "upload-dir Failed with exit code #{$?}"
-    `/bin/echo "Error from: upload-dir '#{dir}' exit code #{$?}"  >> #{dir + '.stdout'}`
-    exit $?
+  if $CHILD_STATUS != 0
+    $stderr.puts "upload-dir Failed with exit code #{$CHILD_STATUS}"
+    `/bin/echo "Error from: upload-dir '#{dir}' exit code #{$CHILD_STATUS}"  >> #{dir + '.stdout'}`
+    exit $CHILD_STATUS
   end
-  print "Files uploaded: "
+  print 'Files uploaded: '
   `/usr/bin/wc -l #{dir}.log`
- 
+
   puts "***************** Validating upload and deleting files from local disk #{tape_number}"
   `/home/moa/bin/validate-upload -d  #{dir} >> #{dir + '.stdout'}`
   puts Time.now
   puts
-  if $? != 0
-    $stderr.puts "validate-upload Failed with exit code #{$?}"
-    `/bin/echo "Error from: validate-upload '#{dir}' exit code #{$?}"  >> #{dir + '.stdout'}`
-    exit $?
+  if $CHILD_STATUS != 0
+    $stderr.puts "validate-upload Failed with exit code #{$CHILD_STATUS}"
+    `/bin/echo "Error from: validate-upload '#{dir}' exit code #{$CHILD_STATUS}"  >> #{dir + '.stdout'}`
+    exit $CHILD_STATUS
   end
 
   puts "****************** Upload Log in #{dir.gsub(/\/$/, '')}.log (Json Fits metadata, line per file)"
   puts "****************** Stdout Log in #{dir.gsub(/\/$/, '')}.stdout"
 else
-  $stderr.puts "Usage: uploadtape <tape-number>"
+  $stderr.puts 'Usage: uploadtape <tape-number>'
 end

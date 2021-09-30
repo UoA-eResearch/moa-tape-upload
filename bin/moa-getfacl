@@ -3,34 +3,33 @@ require_relative '../rlib/aws_connection.rb'
 
 require 'optparse'
 
-#parse command line arguments
+# parse command line arguments
 # Sets @options based on command line args
 def parse_options
   @options = {}
-  @optparse = OptionParser.new do|opts|
+  @optparse = OptionParser.new do |opts|
     opts.banner = "Usage: moa-getfacl [options] <object-name> ...\n\n    Object Store ACL Listing\n\n"
 
-
-  #  @options[:numeric] = false
-  #  opts.on( '-n', 'Display user IDs numerically' ) do
-  #    @options[:numeric] = true
-  #  end
+    #  @options[:numeric] = false
+    #  opts.on( '-n', 'Display user IDs numerically' ) do
+    #    @options[:numeric] = true
+    #  end
 
     opts.on( '-?', '--help', 'Display this screen' ) do
       puts opts
       exit 0
     end
   end
- 
+
   @optparse.parse!
 end
 
 parse_options
 
-Signal.trap("INT") { exit 2 }
-Signal.trap("TERM") {  exit 15}
+Signal.trap('INT') { exit 2 }
+Signal.trap('TERM') {  exit 15 }
 
-@aws = AWS_connection.new(config_file: "#{File.expand_path(File.dirname(__FILE__))}/../conf/conf_internal.json")   #We are inside the Uni network
+@aws = AWS_connection.new(config_file: "#{__dir__}/../conf/conf_internal.json")   # We are inside the Uni network
 
 puts "Bucket ACL for #{@aws.bucket}"
 @aws.bucket_get_acl
@@ -41,5 +40,3 @@ ARGV.each do |argv|
   @aws.object_get_acl(key: argv)
   puts
 end
-
-

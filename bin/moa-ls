@@ -3,11 +3,11 @@ require_relative '../rlib/aws_connection.rb'
 
 require 'optparse'
 
-#parse command line arguments
+# parse command line arguments
 # Sets @options based on command line args
 def parse_options
   @options = {}
-  @optparse = OptionParser.new do|opts|
+  @optparse = OptionParser.new do |opts|
     opts.banner = "Usage: moa-ls [options] <object-name> ...\n\n    Object Store Directory Listing\n    Ending object name with '/' will list just that directory\n\n"
 
     # Define the options, and what they do
@@ -23,12 +23,12 @@ def parse_options
 
     @options[:directories] = true
     @options[:objects] = true
- 
+
     opts.on( '-d', '--directories', 'List Only Directories' ) do
       @options[:directories] = true
       @options[:objects] = false
     end
-    
+
     opts.on( '-o', '--objects', 'List Only objects' ) do
       @options[:objects] = true
       @options[:directories] = false
@@ -38,9 +38,9 @@ def parse_options
     opts.on( '-h', 'When used with the -l option, use unit suffixes: B, KiB, MiB, ...' ) do
       @options[:human_sizes] = true
     end
- 
+
     @options[:recursive] = false
-    opts.on( '-R',  'Recursively list subdirectories encountered' ) do
+    opts.on( '-R', 'Recursively list subdirectories encountered' ) do
       @options[:recursive] = true
     end
 
@@ -50,7 +50,7 @@ def parse_options
     end
 
     @options[:versions] = false
-    opts.on( '-V',  'Include previous versions' ) do
+    opts.on( '-V', 'Include previous versions' ) do
       @options[:versions] = true
     end
 
@@ -59,36 +59,42 @@ def parse_options
       exit 0
     end
   end
- 
+
   @optparse.parse!
 end
 
 def human_size(n)
-  if n < 1024; "%6dB" % n
-  elsif n < 1048576; "%4.1fKiB" % (n/1024.0)
-  elsif n < 1073741824; "%4.1dMiB" % (n/1048576.0)
-  elsif n < 1099511627776; "%4.1fGiB" % (n/1073741824.0)
-  elsif n < 1125899906842624; "%4.1fTiB" % (n/1099511627776.0)
-  else "%4.1fPiB" % (n/1125899906842624.0)
+  if n < 1024
+    '%6dB' % n
+  elsif n < 1048576
+    format('%4.1fKiB', (n / 1024.0))
+  elsif n < 1073741824
+    format('%4.1dMiB', (n / 1048576.0))
+  elsif n < 1099511627776
+    format('%4.1fGiB', (n / 1073741824.0))
+  elsif n < 1125899906842624
+    format('%4.1fTiB', (n / 1099511627776.0))
+  else
+    format('%4.1fPiB', (n / 1125899906842624.0))
   end
 end
 
 def list(prefix:)
   count = size = 0
   delimiter = @options[:recursive] ? nil : ( prefix[-1] == '/' ? '/' : nil )
-  @aws.bucket_ls(prefix: prefix.gsub(/^\//,'') , delimiter: delimiter, versions: @options[:versions] ) do |o|
+  @aws.bucket_ls(prefix: prefix.gsub(/^\//, ''), delimiter: delimiter, versions: @options[:versions] ) do |o|
     if o.key =~ /\/$/
-      next if ! @options[:directories]
-    else
-      next if ! @options[:objects]
+      next unless @options[:directories]
+    elsif ! @options[:objects]
+      next
     end
     if @options[:long]
       print "#{o.key}\t#{@options[:numeric] ? o.owner.id : o.owner.display_name}\t#{@options[:human_sizes] ? human_size(o.size) : o.size}\t#{o.last_modified}"
     else
       print "#{o.key}"
     end
-    print @options[:md5] ? "\t#{ o.etag.gsub(/"/, '') }" : ""
-    puts @options[:versions] ? "\t#{o.is_latest ? "" : "version: #{o.version_id}"}" : ""
+    print @options[:md5] ? "\t#{o.etag.gsub(/"/, '')}" : ''
+    puts @options[:versions] ? "\t#{o.is_latest ? '' : "version: #{o.version_id}"}" : ''
     count += 1
     size += o.size
   end
@@ -96,13 +102,12 @@ end
 
 parse_options
 
-Signal.trap("INT") { exit 2 }
-Signal.trap("TERM") {  exit 15}
+Signal.trap('INT') { exit 2 }
+Signal.trap('TERM') {  exit 15 }
 
-@aws = AWS_connection.new(config_file: "#{File.expand_path(File.dirname(__FILE__))}/../conf/conf_internal.json")   #We are inside the Uni network
+@aws = AWS_connection.new(config_file: "#{__dir__}/../conf/conf_internal.json")   # We are inside the Uni network
 
 ARGV[0] = '/' if ARGV.length == 0
 ARGV.each do |argv|
   list(prefix: argv)
 end
-

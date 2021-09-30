@@ -2,11 +2,11 @@
 require_relative '../rlib/aws_connection.rb'
 
 require 'optparse'
-#parse command line arguments
+# parse command line arguments
 # Sets @options based on command line args
 def parse_options
   @options = {}
-  @optparse = OptionParser.new do|opts|
+  @optparse = OptionParser.new do |opts|
     opts.banner = "Usage: moa-cat [options] <object-name>\n\n     Print object contents to stdout\n\n"
     opts.on( '-?', '--help', 'Display usage' ) do
       puts opts
@@ -18,10 +18,10 @@ end
 
 parse_options
 
-Signal.trap("INT") { exit 2 }
-Signal.trap("TERM") {  exit 15}
+Signal.trap('INT') { exit 2 }
+Signal.trap('TERM') { exit 15 }
 
-aws = AWS_connection.new(config_file: "#{File.expand_path(File.dirname(__FILE__))}/../conf/conf_internal.json")   #We are inside the Uni network
+aws = AWS_connection.new(config_file: "#{__dir__}/../conf/conf_internal.json")   # We are inside the Uni network
 
 if ARGV.length == 1
   aws.object_get_mem(key: ARGV[0]).each_line do |l|
@@ -30,4 +30,3 @@ if ARGV.length == 1
 else
   $stderr.puts @optparse.help
 end
-

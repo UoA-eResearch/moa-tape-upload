@@ -1,21 +1,20 @@
 #!/usr/local/bin/ruby
 require_relative '../rlib/read_tape.rb'
 
-Signal.trap("INT") { exit 2 }
-Signal.trap("TERM") {  exit 15}
+Signal.trap('INT') { exit 2 }
+Signal.trap('TERM') { exit 15 }
 
 if ARGV.length == 1
-  #Make the directory
+  # Make the directory
   `/bin/mkdir -p #{ARGV[0]}`
-  if $? != 0
+  if $CHILD_STATUS != 0
     $stderr.puts "Error from: /bin/mkdir -p '#{ARGV[0]}'"
-    exit $?
+    exit $CHILD_STATUS
   end
 
   puts "***************** Reading Tape into local directory: #{ARGV[0]}"
   read_tape( into_directory: ARGV[0] )
   puts '***************** Completed Reading Tape'
 else
-  $stderr.puts "Usage: readtape <directory>"
+  $stderr.puts 'Usage: readtape <directory>'
 end
-

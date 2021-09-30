@@ -4,74 +4,73 @@ require_relative '../rlib/aws_connection.rb'
 require_relative '../rlib/walk_dir.rb'
 require_relative '../rlib/fits_metadata.rb'
 
-Signal.trap("INT") { exit 2 }
-Signal.trap("TERM") {  exit 15}
+Signal.trap('INT') { exit 2 }
+Signal.trap('TERM') { exit 15 }
 
-
-def validate_directory(aws_fd:, directory: , delete: false, verbose: false)
+def validate_directory(aws_fd:, directory:, delete: false, verbose: false)
   count = 0
   walk_dir(directory: directory) do |full_name, dir, fn|
     count += 1
     begin
       case File.extname(fn)
-      when '.fit',  '.fits' #Astro image format.
+      when '.fit', '.fits' # Astro image format.
         fm = Fits_metadata.new(directory: dir, filename: fn)
         key = "#{fm.obj_path}/#{fn}"
-      
+
         md5 = aws_fd.obj_md5(key: key)
         begin
-          if md5 == nil 
+          if md5.nil?
             puts "file #{fn}: key #{key} Doesn't exist in object store"
           elsif md5 != ( file_md5 = aws_fd.file_md5(filename: full_name) )
             puts "file #{fn}: key #{key} Different MD5 sum file: #{file_md5} Object-store: #{md5}"
           elsif delete
             `/bin/rm -f #{full_name}`
             puts "Deleted:   #{full_name}" if verbose
-          else
-            puts "Validated: #{full_name}" if verbose
+          elsif verbose
+            puts "Validated: #{full_name}"
           end
-        rescue StandardError => error
-          $stderr.puts "validate_directory \"#{full_name}\" aws_fd.file_md5(filename: #{fn}) : #{error}"
+        rescue StandardError => e
+          $stderr.puts "validate_directory \"#{full_name}\" aws_fd.file_md5(filename: #{fn}) : #{e}"
         end
       end
-    rescue StandardError => error
-      $stderr.puts "validate_directory \"#{full_name}\": #{error}"
+    rescue StandardError => e
+      $stderr.puts "validate_directory \"#{full_name}\": #{e}"
     end
   end
   return count
 end
 
-#parse command line arguments
+# parse command line arguments
 # Sets @options based on command line args
 def parse_options
- @options = {}
- @optparse = OptionParser.new do|opts|
-   opts.banner = "Usage: validate-upload [options] directory"
+  @options = {}
+  @optparse = OptionParser.new do |opts|
+    opts.banner = 'Usage: validate-upload [options] directory'
 
-   # Define the options, and what they do
-   @options[:delete] = false
-   opts.on( '-d', '--delete', 'remove files that have been successfully copied to the object store' ) do
-     @options[:delete] = true
-   end
+    # Define the options, and what they do
+    @options[:delete] = false
+    opts.on( '-d', '--delete', 'remove files that have been successfully copied to the object store' ) do
+      @options[:delete] = true
+    end
 
-   @options[:verbose] = false
-   opts.on( '-v', '--verbose', 'Output more information' ) do
-     @options[:verbose] = true
-   end
+    @options[:verbose] = false
+    opts.on( '-v', '--verbose', 'Output more information' ) do
+      @options[:verbose] = true
+    end
 
-   opts.on( '-?', '--help', 'Display this screen' ) do
-     puts opts
-     exit
-   end
- end
+    opts.on( '-?', '--help', 'Display this screen' ) do
+      puts opts
+      exit
+    end
+  end
 
- @optparse.parse!
+  @optparse.parse!
 end
 
 parse_options
 
 if ARGV.length == 1
-  aws = AWS_connection.new(config_file: "#{File.expand_path(File.dirname(__FILE__))}/../conf/conf_internal.json")   #We are inside the Uni network
+  aws = AWS_connection.new(config_file: "#{__dir__}/../conf/conf_internal.json")   # We are inside the Uni network
   puts "**************** Validate-upload(delete: #{@options[:delete]})"
   count = validate_directory(aws_fd: aws, directory: ARGV[0], delete: @options[:delete], verbose: @options[:verbose])
   puts "**************** Validate-upload(delete: #{@options[:delete]}) Processed #{count} files"
